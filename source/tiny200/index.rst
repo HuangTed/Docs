@@ -10,9 +10,4 @@ tiny200开发板学习笔记
    :maxdepth: 1
    :caption: Contents:
 
-   1.introduce
-   2.uboot
-   3.linux-kernal
-   4.rootfs
-   5.nor-spiflash
-   6.package
+   introduce

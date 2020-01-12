@@ -1,8 +1,8 @@
-# 介绍
+# 搭建
 
 搭建Sphinx+GitHub+ReadtheDocs的文档写作工具，用Sphinx生成文档，GitHub托管文档，再导入到ReadtheDocs。
 
-## 安装Sphinx
+## 本地安装Sphinx
 ```
 pip install sphinx sphinx-autobuild sphinx_rtd_theme
 ```
@@ -37,6 +37,12 @@ make html
 ```
 进入build/html目录下，浏览器打开index.html本地浏览。
 
+清楚构建内容，指令如下：
+```
+$ make clean
+Removing everything under 'build'...
+```
+
 ## 支持markdown编写
 通过recommonmark 来支持markdown，安装指令如下：
 ```
@@ -53,6 +59,6 @@ source_suffix = ['.rst', '.md']
 ```
 
 ## 导入ReadtheDocs系统
-将上面创建的工程上传至github，在 ReadtheDocs系统Import github工程，均默认创建即可，创建完后会自动去激活Webhooks，不用再去GitHub设置。一切搞定后，从此只要你往这个仓库push代码，ReadtheDocs上面的文档就会自动更新。
+将上面创建的工程上传至github，在ReadtheDocs系统Import github工程，均默认创建即可。创建完后会自动去激活Webhooks，不用再去GitHub设置。一切搞定后，从此只要你往这个仓库push代码，ReadtheDocs上面的文档就会自动更新。
 
 注：在创建read the docs项目时候，语言选择”Simplified Chinese”
