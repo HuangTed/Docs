@@ -10,5 +10,10 @@ tiny200开发板学习笔记
    :maxdepth: 2
    :caption: Contents:
 
-   introduce
-   2.uboot
+   1.introduce
+   2.搭建开发环境
+   3.uboot
+   4.linux-kernal
+   5.编译rootfs
+   6.package
+   7.烧写验证
