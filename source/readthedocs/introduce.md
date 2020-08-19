@@ -37,7 +37,7 @@ make html
 ```
 进入build/html目录下，浏览器打开index.html本地浏览。
 
-清楚构建内容，指令如下：
+清除构建内容，指令如下：
 ```
 $ make clean
 Removing everything under 'build'...

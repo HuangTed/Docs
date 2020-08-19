@@ -14,6 +14,8 @@
 接下来的内容是我在学习tiny200，更确切的说是学习Linux的总结和记录。一方面梳理自己碎片化的知识，另一方面给同样路过的朋友做个参考。我的很多知识受益于网络，希望我也能帮助到其他人。<br>
 因为工作习惯的原因，我比较喜欢用邮箱，我的邮箱:<tednick@163.com>，有需要的朋友可以通过这个地址联系我。
 
+关于全志的这款 f1c200s，很多资料是通过[WhyCan Forum](https://whycan.cn/f_17.html)和[荔枝派Nano](http://nano.lichee.pro/index.html)获取的。
+
 # 开发环境搭建
 既然是嵌入式系统，spiflash启动是一定要的。tf卡的启动比较简单，基本跟树莓派类似，所以就不再操作了。<br>
 
@@ -24,51 +26,123 @@
 4. 打包spiflash 16MB bin文件<br>
 5. 烧写验证<br>
 
-## 编译u-boot
-分区规划
-下表为分区规划表：
-分区序号 分区大小 分区作用 地址空间及分区名
-mtd0 1MB (0x100000) spl+uboot 0x0000000-0x0100000 : “uboot”
-mtd1 64KB (0x10000) dtb文件 0x0100000-0x0110000 : “dtb”
-mtd2 4MB (0x400000) linux内核 0x0110000-0x0510000 : “kernel”
-mtd3 剩余 (0xAF0000) 根文件系统 0x0510000-0x1000000 : “rootfs”
-uboot 修改
-以下是对 uboot 进行适配的流程描述；
-bootcmd修改
-在uboot源码目录下 进入 ./include/configs/
-修改 suniv.h
- #define CONFIG_BOOTCOMMAND   "sf probe 0 50000000; "  \
-                             "sf read 0x80C00000 0x100000 0x4000; "  \
-                             "sf read 0x80008000 0x110000 0x400000; " \
-                             "bootz 0x80008000 - 0x80C00000"
-
-按照行数解释如下：
-挂载 spi-flash
-读取 spi-flash 1M（0x100000）位置 64KB(0x4000)大小的 dtb 到地址 0x80C00000
-读取 spi-flash 1M+64K（0x110000）位置 4MB(0x400000)大小的 zImage 到地址 0x80008000
-从 0x80008000 启动内核，从 0x80C00000 读取设备树配置
-回到 uboot 源码一级目录，make ARCH=arm menuconfig 进入TUI配置；
-取消勾选 [ ] Enable a default value for bootcmd
-bootargs修改
-勾选 [*] Enable boot arguments；
-在下方一项中填入 bootargs 参数:
-console=ttyS0,115200 panic=5 rootwait root=/dev/mtdblock3 rw rootfstype=jffs2
-(root=/dev/mtdblock3 指的是mtd设备第三分区，分区指定在dts中声明)
-
-回到根目录重新编译
-    make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j4
-
-支持RGB屏
-
 ## 编译linux内核
+获取 linux 源码：[linux](https://github.com/Icenowy/linux)，拉取 f1c100s-480272lcd-test 分支：
+```
+git clone git@github.com:Icenowy/linux.git -b f1c100s-480272lcd-test f1c100s-480272lcd-test
+```
 
-### 重新编译设备树
+从荔枝派官网下载 linux 编译 .config 配置文件：[config](http://dl.sipeed.com/LICHEE/Nano/SDK/config)，自行重命名为 .config
+
+修改 dts 以适配 spi flash，修改内核源码目录下的 ./arch/arm/boot/dts/suniv-f1c100s-licheepi-nano.dts，将原来的&spi0{...}替换为:
+```
+&spi0 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&spi0_pins_a>;
+    status = "okay";
+    spi-max-frequency = <50000000>;
+    flash: w25q128@0 {
+        #address-cells = <1>;
+        #size-cells = <1>;
+        compatible = "winbond,w25q128", "jedec,spi-nor";
+        reg = <0>;   
+        spi-max-frequency = <50000000>;
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partition@0 {
+                label = "u-boot";
+                reg = <0x000000 0x100000>;
+                read-only;
+            };
+
+            partition@100000 {
+                label = "dtb";
+                reg = <0x100000 0x10000>;
+                read-only;
+            };
+
+            partition@110000 {
+                label = "kernel";
+                reg = <0x110000 0x400000>;
+                read-only;
+            };
+
+            partition@510000 {
+                label = "rootfs";
+                reg = <0x510000 0xAF0000>;
+            };
+        };
+    };
+};  
+```
+
+编译设备树
 ```
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- dtbs -j2
 ```
 
+修改内核配置：
+```
+make ARCH=arm menuconfig
+```
+
+勾选 File systems ‣ Miscellaneous filesystems ‣ Journalling Flash File System v2 (JFFS2) support
+
+修改 ./drivers/mtd/spi-nor/spi-nor.c
+```
+注释掉以下一行:
+//{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
+在这一行下面增加一项:
+{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, 0) },
+```
+
+编译：
+```
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j2
+```
+
+编译完成后得到如下固件：
+```
+-rwxrwxr-x 1 ted ted 3.8M 1月   9 00:58 arch/arm/boot/zImage
+```
+
 ## 编译rootfs
 
+### 应用程序编译
+需要用 rootfs 的编译器进行编译
+```
+buildroot-2019.02.8/output/host/bin/arm-linux-gcc
+```
+
 ## 打包nor-spiflash
+16MB spi flash:
+```
+#!/bin/bash
+
+dd if=/dev/zero of=f1c100s_spiflash_16M.bin bs=1M count=16 &&\
+#dd if=Lichee-Pi_u-boot/u-boot-sunxi-with-spl.bin of=f1c100s_spiflash_16M.bin bs=1K conv=notrunc &&\
+dd if=u-boot/u-boot-sunxi-with-spl.bin of=f1c100s_spiflash_16M.bin bs=1K conv=notrunc &&\
+dd if=linux/arch/arm/boot/dts/suniv-f1c100s-licheepi-nano.dtb of=f1c100s_spiflash_16M.bin bs=1K seek=1024 conv=notrunc &&\
+dd if=linux/arch/arm/boot/zImage of=f1c100s_spiflash_16M.bin bs=1K seek=1088 conv=notrunc &&\
+mkfs.jffs2 -s 0x100 -e 0x10000 --pad=0xAF0000 -d rootfs/ -o rootfs.jffs2 &&\
+dd if=rootfs.jffs2 of=f1c100s_spiflash_16M.bin bs=1k seek=5184 conv=notrunc &&\
+sync
+```
 
 ## 烧写验证
+按住 boot 按键，短按一下 reset 按键，松开 boot 按键，进入 fel 下载模式；
+
+在 win10 环境下
+
+烧录整个 spi-flash 16MB 空间：<br>
+> .\sunxi-fel.exe -p spiflash-write 0 binfilepath
+
+只烧录设备树：<br>
+> .\sunxi-fel.exe -p spiflash-write 0x100000 ${PATH}\linux/arch/arm/boot/dts/suniv-f1c100s-licheepi-nano.dtb
+
+只烧录 kernel 镜像：<br>
+> .\sunxi-fel.exe -p spiflash-write 0x110000 ${PATH}\linux\arch\arm\boot\zImage
+

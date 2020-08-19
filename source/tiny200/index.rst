@@ -7,7 +7,7 @@ tiny200开发板学习笔记
 =====================================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
    introduce
