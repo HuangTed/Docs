@@ -11,3 +11,4 @@ tiny200开发板学习笔记
    :caption: Contents:
 
    introduce
+   2.uboot
