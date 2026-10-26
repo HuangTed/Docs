@@ -1,0 +1,5 @@
+# Sphinx 文档构建依赖（Read the Docs 在线构建环境使用）
+# 安装顺序与版本由 pip 解析，保持宽松约束以兼容 RTD 环境
+sphinx
+myst-parser
+sphinx-rtd-theme
