@@ -12,6 +12,7 @@ Welcome to docs-cook's documentation!
 
    readthedocs/index
    tiny200/index
+   Linux学习/index
 
 Indices and tables
 ==================
