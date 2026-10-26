@@ -16,7 +16,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 import sphinx_rtd_theme
-from recommonmark.parser import CommonMarkParser
 
 # -- Project information -----------------------------------------------------
 
@@ -40,6 +39,7 @@ release = u'0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'myst_parser',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -175,6 +175,10 @@ epub_title = project
 epub_exclude_files = ['search.html']
 
 # by user ted
-source_parsers = {
-    '.md': CommonMarkParser,
-}
+# 使用 myst_parser 解析 Markdown（支持表格等 CommonMark 扩展）
+myst_heading_anchors = 2
+myst_enable_extensions = [
+    'tasklist',
+    'deflist',
+    'colon_fence',
+]
